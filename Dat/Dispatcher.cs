@@ -22,9 +22,10 @@ namespace ChatApp.Server
 
         public async Task DispatchAsync(ClientConnection conn, JsonObject frame)
         {
-            int version = frame["v"]?.GetValue<int>() ?? 0;
-            string? type = frame["type"]?.GetValue<string>();
-            long reqId = frame["id"]?.GetValue<long>() ?? -1;
+            // Wrong-typed fields must give BAD_REQUEST, not an exception that drops the connection.
+            int version = frame["v"] is JsonValue vNode && vNode.TryGetValue<int>(out int v) ? v : 0;
+            string? type = frame["type"] is JsonValue tNode && tNode.TryGetValue<string>(out string? tText) ? tText : null;
+            long reqId = frame["id"] is JsonValue idNode && idNode.TryGetValue<long>(out long id) ? id : -1;
 
             if (version != 1 || string.IsNullOrWhiteSpace(type) || reqId < 0)
             {
